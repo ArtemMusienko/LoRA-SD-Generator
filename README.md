@@ -2,102 +2,125 @@
 
 # LoRA SD Generator
 
-**LoRA-SD-Generator**  — это личный исследовательский проект по тонкой настройке (**fine-tuning**) модели  **Stable Diffusion 1.5**  с использованием метода  **LoRA**  (**Low-Rank Adaptation**) для генерации стилизованных лиц по текстовым описаниям.
+[![ru](https://img.shields.io/badge/README_на_русском-2A2C39?style=for-the-badge&logo=github&logoColor=white)](README.ru.md)  
 
-_Цель проекта_  — создать лёгкую, эффективную и воспроизводимую модель, которая способна генерировать высококачественные стилизованные портреты, сохраняя при этом низкое потребление ресурсов.
+**LoRA-SD-Generator** is a personal research project on fine-tuning (**fine-tuning**) the **Stable Diffusion 1.5** model using the **LoRA** (**Low-Rank Adaptation**) method to generate stylized faces from text descriptions.
 
-## Немного теории
-
-Чтобы полностью понять проект, разберем базовые технологии:
-
-- **Stable Diffusion (SD)**: Латентная диффузионная модель от **Stability AI**, обученная на миллиардах изображений (**LAION-5B**). Она работает в латентном пространстве (сжатом с помощью **VAE**), где шум поэтапно удаляется для генерации изображений. 
-
-- **LoRA (Low-Rank Adaptation)**: Метод **PEFT** от **Microsoft**, адаптирующий большие модели (как **SD**) путем добавления низкоранговых матриц к весам. Вместо переобучения всех ~860M параметров **SD**, **LoRA** обучает лишь ~1-10M (`rank=16` в проекте). Это снижает **VRAM** до 4-6GB и ускоряет обучение. 
-
-- **DreamBooth**: это простой и мощный способ дообучить **Stable Diffusion**, чтобы модель научилась хорошо рисовать конкретного человека, животное, предмет или стиль по 3–5 вашим фотографиям.
-
-- **BLIP (Bootstrapped Language-Image Pre-training)**: Модель от **Salesforce** для генерации caption к изображениям. В проекте **BLIP** (`Salesforce/blip-image-captioning-base`) создает текстовые описания для датасета CelebA.
+_The goal of the project_ is to create a lightweight, efficient, and reproducible model that can generate high-quality stylized portraits while maintaining low resource consumption.
 
 
-## Ключевые особенности:
+## A bit of theory
 
-> Запускать код нужно только с графическим ускорителем! В моем примере
-> используется **T4**.
+To fully understand the project, let's explore the underlying technologies:
 
- - Автоматическая подготовка данных: загрузка, предобработка (resize 512x512) и captioning с использованием **BLIP**;
- - Обучение с использованием скрипта `train_dreambooth_lora.py` из **Hugging Face Diffusers**;
- - Интеграция с **Google Drive** для хранения датасета, моделей и генерируемых изображений;
- - Оптимизация под **T4 GPU**: mixed precision (fp16), gradient accumulation.
- 
- **Результат**: Модель **LoRA** (`pytorch_lora_weights.safetensors`), способная генерировать стилизованные лица по текстовым промптам.
+-  **Stable Diffusion (SD)**: A latent diffusion model from **Stability AI** trained on billions of images (**LAION-5B**). It operates in a latent space (compressed using **VAE**), where noise is gradually removed to generate images.
 
-> Также для работы с кодом понадобится **HuggingFace** токен и разрешить
-> доступ к вашему **Google Drive**. Более подробная инструкция поэтапно
-> представлена в самой работе!
+- **LoRA (Low-Rank Adaptation)**: **Microsoft's** **PEFT** method that adapts large models (like **SD**) by adding low-rank matrices to the weights. Instead of retraining all ~860M parameters of **SD**, **LoRA** only trains ~1-10M (`rank=16` in the project). This reduces **VRAM** to 4-6GB and speeds up training.
 
-## Метрики
+- **DreamBooth**: This is a simple and powerful way to fine-tune **Stable Diffusion** so that the model learns to draw a specific person, animal, object, or style well from 3-5 of your photos.
 
-### Какие метрики используются?
+- **BLIP (Bootstrapped Language-Image Pre-training)**: A model from **Salesforce** for generating captions for images. The **BLIP** project (`Salesforce/blip-image-captioning-base`) creates text descriptions for the CelebA dataset.
 
--   **FID (Frechet Inception Distance)**: Оценивает, насколько близко распределение сгенерированных изображений к распределению реальных изображений в пространстве признаков **InceptionV3**. Берутся векторные представления реальных и синтетических изображений, считаются их средние и ковариации, затем вычисляется **расстояние Фреше** между двумя гауссовскими распределениями. Меньше — лучше (0 = идеал).
-    
--   **CLIP score (Contrastive Language-Image Pre-training)**: Обычно это косинусная похожесть между эмбеддингом текста (промпта/подписи) и эмбеддингом изображения, вычисленная с помощью модели **CLIP**. Значение в диапазоне примерно [-1, 1]; выше — сильнее соответствие изображения и текста. Часто усредняют по множеству пар «текст–изображение».
+## Key features:
 
-### Какие показатели метрик и как их улучшить?
+> You only need to run the code with a GPU! In my example,
+> I use **T4**.
 
-    FID = 149.66
-    CLIP = 0.28
+- Automatic data preparation: loading, preprocessing (resize 512x512), and captioning using **BLIP**;
 
-**Методы улучшения показателей метрик:**
+- Training using the `train_dreambooth_lora.py` script from **Hugging Face Diffusers**;
 
--   Увеличьте размер датасета или применяйте разумные аугментации;
--   Увеличьте число шагов обучения / делайте более длительную тренировку при уменьшенном lr;
--   Поднимите rank (LoRA);
--   Увеличьте batch size, если позволяет GPU.
+- Integration with **Google Drive** for storing dataset, models and generated images;
 
-## 📸 Пример работы кода
+- Optimization for **T4 GPU**: mixed precision (fp16), gradient accumulation.
 
-### Основной интерфейс
+**Result**: The **LoRA** model (`pytorch_lora_weights.safetensors`), capable of generating stylized faces based on text suggestions.
 
-На скриншотах ниже показан основной рабочий процесс: настройка параметров промпта и сгенерированное изображение.
+> Also, to work with the code, you will need a **HuggingFace** token and allow
+> access to your **Google Drive**. More detailed step-by-step instructions
+> presented in the work itself!
 
-<p align="center">
-  <img 
-    width="1280" 
-    height="433" 
-    src="https://github.com/user-attachments/assets/730407ac-ec75-4f20-9db2-e6f8f0fc1738"
-  >
-  <br>
+## Metrics
+
+### What metrics are used?
+
+-  **FID (Frechet Inception Distance)**: Estimates how close the distribution of generated images is to the distribution of real images in the feature space of **InceptionV3**. Vector representations of real and synthetic images are taken, their means and covariances are calculated, and then the **Frechet distance** between the two Gaussian distributions is computed. Lower is better (0 = ideal).
+
+- **CLIP score (Contrastive Language-Image Pre-training)**: This is usually the cosine similarity between the embedding of the text (hint/signature) and the embedding of the image, calculated using the **CLIP** model. The value is in the range of approximately [-1, 1]; higher is the stronger correspondence between the image and the text. It is often averaged over a variety of text–image pairs.
+
+### What are the metrics and how can they be improved?
+
+FID = 149.66
+CLIP = 0.28
+
+**Methods to improve metric performance:**
+
+- Increase the size of the dataset or use reasonable augmentations;
+
+- Increase the number of training steps or train for a longer time with a reduced learning rate;
+
+- Increase the rank (LoRA);
+
+- Increase the batch size if the GPU allows it.
+
+## 📸 Example of code operation
+
+### Main interface
+
+The screenshots below show the main workflow: setting up prompt parameters and the generated image.
+
+<p  align="center">
+
+<img
+
+width="1280"
+
+height="433"
+
+src="https://github.com/user-attachments/assets/730407ac-ec75-4f20-9db2-e6f8f0fc1738"
+
+>
+
+<br>
+
 </p>
+
+  
 
 ---
 
-<p align="center">
-  <img 
-    width="1280" 
-    height="407" 
-    src="https://github.com/user-attachments/assets/03d57d8d-1cc3-495d-8404-922b7101c4a3"
-  >
-  <br>
+  
+
+<p  align="center">
+
+<img
+
+width="1280"
+
+height="407"
+
+src="https://github.com/user-attachments/assets/03d57d8d-1cc3-495d-8404-922b7101c4a3"
+
+>
+
+<br>
+
 </p>
 
-### Что подразумевается под настройками параметров промпта?
+### What are the settings for the prompt parameters?
 
-1. **Промпт** — текстовое описание того, что ты хочешь увидеть на изображении (основная инструкция для модели);
+1.  **Prompt** is a text description of what you want to see in the image (the main instruction for the model);
 
-2. **Нежелательные элементы** — это отрицательный промпт: список того, чего ты НЕ хочешь видеть. Модель активно старается их избегать;
+2.  **Unwanted elements** are a negative prompt: a list of what you do NOT want to see. The model actively tries to avoid them;
 
-3. **Случайный промпт** — кнопка, которая автоматически заполняет поле «Промпт» случайным описанием из твоего датасета;
+3.  **Random prompt** — a button that automatically fills the "Prompt" field with a random description from your dataset;
 
-4. **Шаги** — количество итераций очистки шума (20–150). Меньше — быстрее, но хуже качество; больше — детальнее, но дольше. Оптимально 50–100;
+4.  **Steps** — the number of noise cleaning iterations (20–150). Less is faster but lower quality; more is more detailed but longer. Optimal is 50–100;
 
-5. **Сила следования промпту** — Guidance scale (1.0–20.0). Чем выше — тем точнее модель следует твоему тексту, но может появляться перебор (артефакты). 7.5 — классический баланс;
+5.  **Prompt Follow Strength** — Guidance scale (1.0–20.0). The higher you go, the more accurately the model follows your text, but there may be overkill (artifacts). 7.5 — classic balance;
 
-6. **Степень преобразования** — Strength (0.1–1.0) для режима img2img. Показывает, насколько сильно модель изменит исходное изображение. 0.1 — минимальные правки, 1.0 — почти полная перегенерация;
+6. **Degree of conversion** — Strength (0.1–1.0) for img2img mode. Shows how much the model will change the original image. 0.1 — minimal edits, 1.0 — almost complete regeneration;
 
-7. **Исходное изображение** — поле для загрузки картинки (если хочешь использовать img2img). Модель берёт её за основу и стилизует по промпту. Если не загружать — обычная генерация с нуля.
+7. **Source image** is a field for uploading an image (if you want to use img2img). The model takes this image as a basis and stylizes it according to the prompt. If you do not upload an image, the model will generate it from scratch.
 
-Эти параметры дают полный контроль: от простого ввода текста до сложной стилизации своих фото.
-
-
-
+These parameters give you complete control, from simple text input to complex styling of your photos.
