@@ -69,42 +69,24 @@ CLIP = 0.28
 
 The screenshots below show the main workflow: setting up prompt parameters and the generated image.
 
-<p  align="center">
-
-<img
-
-width="1280"
-
-height="433"
-
-src="https://github.com/user-attachments/assets/730407ac-ec75-4f20-9db2-e6f8f0fc1738"
-
->
-
-<br>
-
+<p align="center">
+  <img 
+    width="1280" 
+    height="433" 
+    src="https://github.com/user-attachments/assets/730407ac-ec75-4f20-9db2-e6f8f0fc1738"
+  >
+  <br>
 </p>
-
-  
 
 ---
 
-  
-
-<p  align="center">
-
-<img
-
-width="1280"
-
-height="407"
-
-src="https://github.com/user-attachments/assets/03d57d8d-1cc3-495d-8404-922b7101c4a3"
-
->
-
-<br>
-
+<p align="center">
+  <img 
+    width="1280" 
+    height="407" 
+    src="https://github.com/user-attachments/assets/03d57d8d-1cc3-495d-8404-922b7101c4a3"
+  >
+  <br>
 </p>
 
 ### What are the settings for the prompt parameters?
